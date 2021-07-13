@@ -6,7 +6,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
 
-from .forms import CommentForm, UserEditForm, PostForm, ProfileEditForm
+from .forms import CommentForm, UserEditForm, PostForm, ProfileEditForm,\
+    GroupForm
 from .models import Comment, Follow, Group, Post, User, Profile
 
 
@@ -28,6 +29,26 @@ def group_posts(request, slug):
     page = paginator.get_page(page_number)
     return render(request, 'posts/group.html', {
         'group': group, 'page': page, 'paginator': paginator})
+
+
+def group_list(request):
+    group_lists = Group.objects.all()
+    paginator = Paginator(group_lists, settings.PAGINATOR_COUNT)
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
+    return render(request, 'posts/group_list.html', {
+        'group_list': group_lists, 'page': page, 'paginator': paginator})
+
+
+@login_required
+def group_create(request):
+    form = GroupForm(request.POST or None)
+    if request.method == 'GET' or not form.is_valid():
+        return render(request, 'posts/new_group.html',
+                      {'form': form})
+    group = form.save(commit=False)
+    group.save()
+    return redirect('group_list')
 
 
 def profile(request, username):
