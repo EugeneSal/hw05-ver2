@@ -23,19 +23,18 @@
     {% endif %}
 
     <!-- Отображение ссылки на комментарии -->
-         {% if post.post_comments.exists %}
-          <div class="mb-3">
+
+      <div class="mb-3 d-flex justify-content-between align-items-center">
+        <!--  <a class="mr-3" href="{ url 'like_post' %}"><i class="fa fa-heart text-primary" aria-hidden="true"></i> {{ post.posts_liked }}</a>
+  -->       {% if post.post_comments.exists %}
             Комментариев: {{ post.post_comments.count }}
-          </div>
-          {% else %}
-          <div>
+         {% else %}
             Комментариев пока нет
-          </div>
-        {% endif %}
-    <div class="d-flex justify-content-between align-items-center">
-
-
-    <div class="btn-group">
+         {% endif %}
+            <a class="mr-3"><i class="fa fa-eye text-primary" aria-hidden="true"></i> {{ post.total_views }}</a>
+      </div>
+      <div class="d-flex justify-content-between align-items-center">
+      <div class="btn-group">
         {% if not form %}
           <div>
         <a class="btn btn-sm btn-primary ml-2" href="{% url 'post' post.author.username post.id %}" role="button">

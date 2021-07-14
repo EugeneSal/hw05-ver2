@@ -1,8 +1,27 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 
 User = get_user_model()
+
+#
+# class Like(models.Model):
+#     user = models.ForeignKey(settings.AUTH_USER_MODEL,
+#                              related_name='likes',
+#                              on_delete=models.CASCADE)
+#     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+#     object_id = models.PositiveIntegerField()
+#     content_object = GenericForeignKey('content_type', 'object_id')
+
+
+class Ip(models.Model):
+    ip = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.ip
 
 
 class Profile(models.Model):
@@ -37,6 +56,8 @@ class Post(models.Model):
                               related_name='posts',
                               blank=True, null=True)
     image = models.ImageField(upload_to='posts/', blank=True, null=True)
+    views = models.ManyToManyField(Ip, related_name='post_views', blank=True)
+    #likes = GenericRelation(Like)
 
     class Meta:
         ordering = ['-pub_date']
@@ -45,6 +66,13 @@ class Post(models.Model):
 
     def __str__(self) -> str:
         return self.text[:15]
+
+    def total_views(self):
+        return self.views.count()
+    #
+    # @property
+    # def total_likes(self):
+    #     return self.likes.count()
 
 
 class Comment(models.Model):

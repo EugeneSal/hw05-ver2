@@ -8,7 +8,6 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('group/<slug:slug>/', views.group_posts, name='group'),
     path('new_group/', views.group_create, name='group_create'),
-
     path('edit/', views.edit, name='edit'),
     path('new/', views.new_post, name='new_post'),
     path('follow/', views.follow_index, name='follow_index'),

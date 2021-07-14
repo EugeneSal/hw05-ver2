@@ -5,10 +5,48 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import cache_page
+from django.contrib.contenttypes.models import ContentType
 
 from .forms import CommentForm, UserEditForm, PostForm, ProfileEditForm,\
     GroupForm
-from .models import Comment, Follow, Group, Post, User, Profile
+from .models import Comment, Follow, Group, Post, User, Profile, Ip
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+#
+# def add_like(obj, user):
+#     obj_type = ContentType.objects.get_for_model(obj)
+#     like, is_create = Like.objects.get_or_create(content_type=obj_type,
+#                                                  object_id=obj.id, user=user)
+#     return like
+#
+#
+# def remove_like(obj, user):
+#     obj_type = ContentType.objects.get_for_model(obj)
+#     Like.objects.filter(content_type=obj_type, object_id=obj_type.id,
+#                         user=user).delete()
+#
+#
+# def is_fan(obj, user):
+#     if not user.is_authenticated:
+#         return False
+#     obj_type = ContentType.objects.get_for_model(obj)
+#     likes = Like.objects.filter(content_type=obj_type, object_id=obj.id,
+#                                 user=user)
+#     return likes.exists()
+#
+#
+# def get_fans(obj):
+#     obj_type = ContentType.objects.get_for_model(obj)
+#     return User.objects.filter(likes__content_type=obj_type,
+#                                likes__object_id=obj.id)
 
 
 @cache_page(20, key_prefix='index_page')
@@ -69,6 +107,12 @@ def profile(request, username):
 def post_view(request, username, post_id):
     post = get_object_or_404(Post.objects.select_related('author'),
                              id=post_id, author__username=username)
+    ip = get_client_ip(request)
+    if Ip.objects.filter(ip=ip).exists():
+        post.views.add(Ip.objects.get(ip=ip))
+    else:
+        Ip.objects.create(ip=ip)
+        post.views.add(Ip.objects.get(ip=ip))
     comments = post.post_comments.all()
     form = CommentForm()
     return render(request, 'posts/post.html', {

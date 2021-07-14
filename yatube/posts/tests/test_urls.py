@@ -21,7 +21,7 @@ class PostsURLTests(TestCase):
             'posts/index.html': '/',
             'posts/group.html': f'/group/{cls.group.slug}/',
             'posts/new_post.html': '/new/',
-            'posts/profile.html': f'/{cls.author.username}/',
+            #'posts/profile.html': f'/{cls.author.username}/',
             'posts/post.html': f'/{cls.author.username}/{cls.post.id}/'}
 
     def setUp(self):
@@ -55,6 +55,11 @@ class PostsURLTests(TestCase):
     def test_urls_author(self):
         """URL-адрес доступен автору поста......................................
         """
+        self.authorized_user.get(reverse('index'))
+        response = self.authorized_user.get(reverse('index'))
+
+        print(response.request['wsgi.url_scheme'].index)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         for template, reverse_name in self.templates_url_names.items():
             with self.subTest():
                 response = self.authorized_user.get(reverse_name)
@@ -73,8 +78,8 @@ class PostsURLTests(TestCase):
             with self.subTest():
                 response = self.not_author_user.get(reverse_name)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-        response = self.not_author_user.get(f'/{self.author.username}/'
-                                            f'{self.post.id}/edit/')
+        response = self.not_author_user.get(f'/{ self.author.username }/'
+                                            f'{ self.post.id }/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         response = self.not_author_user.get(f'/{self.author.username}/'
                                             f'{self.post.id}/comment/')
