@@ -4,8 +4,8 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.cache import cache_page
-from django.contrib.contenttypes.models import ContentType
+# from django.views.decorators.cache import cache_page
+# from django.contrib.contenttypes.models import ContentType
 
 from .forms import CommentForm, UserEditForm, PostForm, ProfileEditForm,\
     GroupForm
@@ -47,9 +47,9 @@ def get_client_ip(request):
 #     obj_type = ContentType.objects.get_for_model(obj)
 #     return User.objects.filter(likes__content_type=obj_type,
 #                                likes__object_id=obj.id)
+# @cache_page(20, key_prefix='index_page')
 
 
-@cache_page(20, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.select_related('group').all()
     paginator = Paginator(post_list, settings.PAGINATOR_COUNT)
@@ -91,7 +91,10 @@ def group_create(request):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    profile_data = get_object_or_404(Profile, user=author)
+    try:
+        profile_data = get_object_or_404(Profile, user=author)
+    except Exception:
+        profile_data = None
     post_list = author.posts.all()
     paginator = Paginator(post_list, settings.PAGINATOR_COUNT)
     page_number = request.GET.get('page')
@@ -214,8 +217,8 @@ def comment_delete(request, id):
 
 
 @login_required
-def post_delete(request, id):
-    post = get_object_or_404(Post, id=id)
+def post_delete(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
     if request.user == post.author:
         post.delete()
     return redirect('profile', username=post.author)

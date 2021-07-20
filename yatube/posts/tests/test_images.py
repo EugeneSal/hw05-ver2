@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Group, Post, User
+from ..models import Group, Post, User, Profile
 
 TEMP_MEDIA = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -17,6 +17,7 @@ class TestPostImages(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='test_user')
+        cls.profile = Profile.objects.create(user=cls.user)
         cls.group = Group.objects.create(title='test title', slug='test_slug')
 
         small_gif = (

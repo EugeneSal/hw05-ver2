@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import Group, Post, User
+from ..models import Group, Post, User, Profile
 
 
 class PostsURLTests(TestCase):
@@ -12,6 +12,7 @@ class PostsURLTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.author = User.objects.create_user(username='Testuser')
+        # cls.author_profile = Profile.objects.create(user=cls.author)
         cls.not_author = User.objects.create_user(username='Notauthoruser')
         cls.post = Post.objects.create(
             author=cls.author, text='Тестовый текст')
@@ -21,8 +22,10 @@ class PostsURLTests(TestCase):
             'posts/index.html': '/',
             'posts/group.html': f'/group/{cls.group.slug}/',
             'posts/new_post.html': '/new/',
-            #'posts/profile.html': f'/{cls.author.username}/',
-            'posts/post.html': f'/{cls.author.username}/{cls.post.id}/'}
+            'posts/profile.html': f'/{cls.author.username}/',
+            'posts/post.html': f'/{cls.author.username}/{cls.post.id}/',
+            'posts/comments.html': f'/{cls.author.username}/'
+                                   f'{cls.post.id}/comment/'}
 
     def setUp(self):
         self.anonim_user = Client()
@@ -33,65 +36,59 @@ class PostsURLTests(TestCase):
         self.not_author_user = Client()
         self.not_author_user.force_login(self.not_author)
 
-    def test_urls_uses_correct_template(self):
+    def test_urls_anonim(self):
         """URL-адрес доступность для анонимного пользователя....................
         и проверка перенаправления"""
         for template, reverse_name in self.templates_url_names.items():
-            with self.subTest():
+            with self.subTest(reverse_name=reverse_name):
                 if reverse_name == reverse('new_post'):
                     response = self.anonim_user.get(reverse_name)
                     self.assertEqual(response.status_code, HTTPStatus.FOUND)
                     self.assertRedirects(response, '/auth/login/?next=/new/')
+                elif reverse_name == reverse(
+                        'add_comment', kwargs={'username': self.author.username,
+                                               'post_id': self.post.id}):
+                    response = self.anonim_user.get(reverse_name)
+                    self.assertEqual(response.status_code, HTTPStatus.FOUND)
+                    self.assertRedirects(response,
+                                         f'/auth/login/?next=/'
+                                         f'{self.author.username}/'
+                                         f'{self.post.id}/comment/')
                 else:
                     response = self.anonim_user.get(reverse_name)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
         response = self.anonim_user.get(f'/{self.author.username}/'
                                         f'{self.post.id}/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-        response = self.anonim_user.get(
-            f'/{self.author.username}/{self.post.id}/comment/')
-        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_urls_author(self):
         """URL-адрес доступен автору поста......................................
         """
-        self.authorized_user.get(reverse('index'))
-        response = self.authorized_user.get(reverse('index'))
-
-        print(response.request['wsgi.url_scheme'].index)
-        self.assertEqual(response.status_code, HTTPStatus.OK)
         for template, reverse_name in self.templates_url_names.items():
-            with self.subTest():
+            with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_user.get(reverse_name)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
         response = self.authorized_user.get(
             f'/{self.author.username}/{self.post.id}/edit/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-        response = self.authorized_user.get(f'/{self.author.username}/'
-                                            f'{self.post.id}/comment/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_urls_not_author(self):
         """URL-адрес доступен не автору поста...................................
         """
         for template, reverse_name in self.templates_url_names.items():
-            with self.subTest():
+            with self.subTest(reverse_name=reverse_name):
                 response = self.not_author_user.get(reverse_name)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
         response = self.not_author_user.get(f'/{ self.author.username }/'
                                             f'{ self.post.id }/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-        response = self.not_author_user.get(f'/{self.author.username}/'
-                                            f'{self.post.id}/comment/')
-        self.assertEqual(response.status_code, HTTPStatus.OK)
-
 
     def test_pages_use_correct_template(self):
         """URL-адрес использует соответствующий шаблон..........................
         """
         cache.clear()
         for template, reverse_name in self.templates_url_names.items():
-            with self.subTest():
+            with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_user.get(reverse_name)
                 self.assertTemplateUsed(response, template)
         response = self.authorized_user.get(

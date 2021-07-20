@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q, F
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -41,6 +42,7 @@ class Group(models.Model):
 
     class Meta:
         verbose_name_plural = 'Название групп'
+        ordering = ['title']
 
     def __str__(self) -> str:
         return self.title
@@ -97,5 +99,8 @@ class Follow(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=('user', 'author'),
-                                    name='unique_list')
+                                    name='unique_list'),
+            models.CheckConstraint(
+                check=~Q(user=F('author')), name='author'
+            )
         ]

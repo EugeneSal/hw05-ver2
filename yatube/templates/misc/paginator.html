@@ -8,11 +8,11 @@
           <a
                   class="page-link"
                   href="?page={{ page.previous_page_number }}">&laquo;
-            Предыдущая</a>
+            Назад</a>
         </li>
       {% else %}
         <li class="page-item disabled">
-          <span class="page-link">&laquo; Предыдущая</span>
+          <span class="page-link">&laquo; Назад</span>
         </li>
       {% endif %}
       {% for i in page.paginator.page_range %}
@@ -32,11 +32,11 @@
         <li class="page-item">
           <a
                   class="page-link"
-                  href="?page={{ page.next_page_number }}">Следующая &raquo;</a>
+                  href="?page={{ page.next_page_number }}">Вперед &raquo;</a>
         </li>
       {% else %}
         <li class="page-item disabled">
-          <span class="page-link">Следующая &raquo;</span>
+          <span class="page-link">Вперед &raquo;</span>
         </li>
       {% endif %}
     </ul>

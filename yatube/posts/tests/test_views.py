@@ -6,6 +6,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from ..models import Follow, Group, Post, User
+# , Profile
 
 POSTS_COUNT = 13
 PAGE_COUNT = 10
@@ -16,6 +17,7 @@ class PostPagesTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='TestUser')
+        # cls.profile = Profile.objects.create(user=cls.user)
         cls.group = Group.objects.create(title='TestGroup',
                                          slug='test_slug',
                                          description='Test description')
@@ -152,6 +154,7 @@ class PaginatorTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='TestUser')
+        # cls.profile = Profile.objects.create(user=cls.user)
         cls.authorized_user = Client()
         cls.authorized_user.force_login(cls.user)
         cls.group = Group.objects.create(title='TestGroup',
@@ -172,8 +175,8 @@ class PaginatorTest(TestCase):
         """Проверка первой страницы paginator должен показать 10 постов.........
         """
         cache.clear()
-        for adress, reverse_name in self.templates_pages_names.items():
-            with self.subTest(adress=adress):
+        for address, reverse_name in self.templates_pages_names.items():
+            with self.subTest(adress=address):
                 response = self.authorized_user.get(reverse_name)
                 self.assertEqual(len(response.context.get('page').object_list),
                                  PAGE_COUNT)
@@ -181,8 +184,8 @@ class PaginatorTest(TestCase):
     def test_second_page_have_three_posts(self):
         """Проверка второй страницы paginator должен покажать 3 поста...........
         """
-        for adress, reverse_name in self.templates_pages_names.items():
-            with self.subTest(adress=adress):
+        for address, reverse_name in self.templates_pages_names.items():
+            with self.subTest(adress=address):
                 response = self.authorized_user.get(reverse_name + '?page=2')
                 self.assertEqual(len(response.context.get('page').object_list),
                                  POSTS_COUNT - PAGE_COUNT)
@@ -231,12 +234,13 @@ class TestFollow(TestCase):
     def test_follow(self):
         """Тест что подписка работает и фаловер добавляетя......................
         """
-        self.authorized_user.get(reverse('profile_follow', kwargs={
+        response = self.authorized_user.get(reverse('profile_follow', kwargs={
             'username': self.user.username}))
         follow = Follow.objects.first()
         self.assertEqual(Follow.objects.count(), 1)
         self.assertEqual(follow.author, self.user)
         self.assertEqual(follow.user, self.follow_user)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
     def test_unfollow(self):
         """Тест что фаловер может отписаться....................................
