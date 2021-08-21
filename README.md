@@ -32,7 +32,7 @@ python -m venv env
 
 source venv/bin/activate
 ```
-обновить pip
+Обновить pip
 ```
 python -m pip install --upgrade pip
 ```
