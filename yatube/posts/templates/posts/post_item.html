@@ -25,9 +25,9 @@
     <!-- Отображение ссылки на комментарии -->
 
       <div class="mb-3 d-flex justify-content-between align-items-center">
-        <!--  <a class="mr-3" href="{ url 'like_post' %}"><i class="fa fa-heart text-primary" aria-hidden="true"></i> {{ post.posts_liked }}</a>
-  -->       {% if post.post_comments.exists %}
-            Комментариев: {{ post.post_comments.count }}
+        <!--  <a class="mr-3" href="{ url 'like_post' %}"><i class="fa fa-heart text-primary" aria-hidden="true"></i> { post.posts_liked }}</a>
+  -->       {% if post.comments.exists %}
+            Комментариев: {{ post.comments.count }}
          {% else %}
             Комментариев пока нет
          {% endif %}

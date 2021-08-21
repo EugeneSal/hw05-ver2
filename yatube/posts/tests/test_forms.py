@@ -59,6 +59,10 @@ class TestsPostForm(TestCase):
                                             group=self.group,
                                             image='posts/small.gif').exists())
         self.assertTrue(response.context['page'][0].image.name, uploaded.name)
+        response = self.authorized_user.get(reverse('index'))
+        self.assertEqual(response.context['page'][0].text, 'test text form')
+        self.assertEqual(response.context['page'][0].author, self.author)
+        self.assertEqual(response.context['page'][0].group, self.group)
 
     def test_edit_form_post(self):
         """Проверка что при редактировании изменяется соответственный пост......

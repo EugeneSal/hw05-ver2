@@ -29,10 +29,20 @@ class CommentForm(forms.ModelForm):
 class UserEditForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email')
+        fields = ('first_name', 'last_name', 'email', 'username')
+        help_texts = {
+            'first_name': 'Имя',
+            'last_name': 'Фамилия',
+            'email': 'Электронная почта',
+            'username': 'Никнэйм - латинскими буквами'
+        }
 
 
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ('date_of_birth', 'photo')
+        fields = ('date_of_birth', 'photo', 'city')
+        help_texts = {
+            'city': 'Ваш город',
+            'date_of_birth': 'введите дату в формате: ДД.ММ.ГГГГ',
+            'image': 'Аватарка'}

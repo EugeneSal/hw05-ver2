@@ -7,10 +7,12 @@ class PostAdmin(admin.ModelAdmin):
     list_display = ('text', 'pub_date', 'author')
     search_fields = ('text',)
     list_filter = ('pub_date',)
+    list_select_related = ('author', 'group')
     empty_value_display = '-пусто-'
 
 
 class GroupAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('title',)}
     list_display = ('pk', 'title', 'slug', 'description')
     search_fields = ('title',)
     empty_value_display = '-пусто-'

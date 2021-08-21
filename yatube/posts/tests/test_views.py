@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import Follow, Group, Post, User
+from ..models import Follow, Group, Post, User, Comment
 # , Profile
 
 POSTS_COUNT = 13
@@ -55,7 +55,6 @@ class PostPagesTests(TestCase):
         cache.clear()
         response = self.authorized_user.get(reverse('index'))
         last_post = response.context['page'][0]
-        print(dir(last_post))
         self.assertEqual(last_post, self.post)
 
     def test_context_in_template_group(self):
@@ -82,6 +81,9 @@ class PostPagesTests(TestCase):
             with self.subTest(value=value):
                 form_field = response.context['form'].fields[value]
                 self.assertIsInstance(form_field, expect)
+        response = self.guest_client.get(reverse('new_post'))
+        urls = '/auth/login/?next=/new/'
+        self.assertRedirects(response, urls, status_code=HTTPStatus.FOUND)
 
     def test_context_in_template_post_edit(self):
         """Шаблон post_edit сформирован с правильным контекстом.................
@@ -201,31 +203,33 @@ class TestCache(TestCase):
         cls.group = Group.objects.create(title='TestGroup',
                                          slug='test_slug',
                                          description='Test description')
+        cls.post = Post.objects.create(author=cls.user, group=cls.group,
+                                       text='text')
 
     def test_cache_index(self):
         """Проверка что страница индекса работает с 20 секундным кешем..........
         """
-        cache.clear()
+        response = self.authorized_user.get(reverse('index'))
         Post.objects.create(author=self.user, text='test cache text',
                             group=self.group)
-        self.authorized_user.get(reverse('index'))
-        response = self.authorized_user.get(reverse('index'))
-        self.assertEqual(response.context, None)
+        response1 = self.authorized_user.get(reverse('index'))
+        self.assertEqual(response.content, response1.content)
         cache.clear()
-        response = self.authorized_user.get(reverse('index'))
-        self.assertNotEqual(response.context, None)
-        self.assertEqual(response.context['page'][0].text, 'test cache text')
+        response3 = self.authorized_user.get(reverse('index'))
+        self.assertNotEqual(response3.content, response1.content)
+        self.assertEqual(response3.context['page'][0].text, 'test cache text')
+        self.assertEqual(len(response3.context['page'].object_list), 2)
 
 
 class TestFollow(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(username='TestUser')
+        cls.user = User.objects.create_user(username='TestAuthor')
         cls.group = Group.objects.create(title='TestGroup',
                                          slug='test_slug',
                                          description='Test description')
-        cls.follow_user = User.objects.create_user(username='TestAuthor')
+        cls.follow_user = User.objects.create_user(username='TestUser')
 
     def setUp(self):
         self.authorized_user = Client()
@@ -234,8 +238,13 @@ class TestFollow(TestCase):
     def test_follow(self):
         """Тест что подписка работает и фаловер добавляетя......................
         """
+        follow_count1 = Follow.objects.count()
+        follow = Follow.objects.filter(author=self.user, user=self.follow_user)
+        self.assertEqual(follow.first(), None)
         response = self.authorized_user.get(reverse('profile_follow', kwargs={
             'username': self.user.username}))
+        follow_count2 = Follow.objects.count()
+        self.assertEqual(follow_count2, follow_count1 + 1)
         follow = Follow.objects.first()
         self.assertEqual(Follow.objects.count(), 1)
         self.assertEqual(follow.author, self.user)
@@ -312,3 +321,4 @@ class TestComments(TestCase):
         response = self.authorized_user.post(self.url_comment, {
             'text': 'test comment'}, follow=True)
         self.assertContains(response, 'test comment')
+        self.assertEqual(Comment.objects.count(), 1)

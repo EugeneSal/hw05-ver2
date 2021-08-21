@@ -24,3 +24,10 @@ class PostsModelTest(TestCase):
         """
         expected_title = self.group.title
         self.assertEqual(expected_title, str(self.group))
+
+    def test_sub_2_test_in_one(self):
+        expect = {str(self.post): self.post.text[:15],
+                  str(self.group): self.group.title}
+        for key, value in expect.items():
+            with self.subTest(value=value):
+                self.assertEqual(key, value)
