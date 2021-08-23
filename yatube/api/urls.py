@@ -15,7 +15,6 @@ router.register(r'posts/(?P<post_id>\d+)/comments', CommentViewSet,
 router.register(r'groups', GroupViewSet, basename='groups')
 router.register(r'follow', FollowViewSet, basename='follow')
 
-
 router.register(r'users', UserViewSet, basename='users')
 
 

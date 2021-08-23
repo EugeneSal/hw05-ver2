@@ -52,7 +52,7 @@ class FollowSerializer(serializers.ModelSerializer):
         queryset=User.objects.all())
 
     class Meta:
-        fields = ('user', 'author')
+        fields = ('id', 'user', 'author')
         model = Follow
         validators = [
             UniqueTogetherValidator(

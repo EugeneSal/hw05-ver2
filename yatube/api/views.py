@@ -3,9 +3,8 @@ from rest_framework import viewsets, filters
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
-    IsAuthenticated
 )
-from .permission import IsAuthorOrReadOnly
+from .permission import IsAuthorOrReadOnly, IsFollowerOrReadOnly
 from .serializers import *
 from posts.models import Post, Group, User
 
@@ -25,7 +24,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         post = get_object_or_404(Post, pk=self.kwargs.get('post_id'))
-        return post.comments
+        return post.comments.all()
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -48,12 +47,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsFollowerOrReadOnly]
     filter_backends = [filters.SearchFilter]
-    search_fields = ['=user__username', '=following__username']
+    search_fields = ['=user__username', '=author__username']
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        return self.request.user.follower
+        return self.request.user.follower.all()
