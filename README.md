@@ -24,7 +24,7 @@
 ***
 ### Как запустить проект:
 ```
-git clone https://github.com/EugeneSal/.git
+https://github.com/EugeneSal/hw05-ver2.git
 ```
 Cоздать и активировать виртуальное окружение:
 ```
