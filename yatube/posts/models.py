@@ -1,7 +1,7 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Q, F
-from django.conf import settings
 
 User = get_user_model()
 
@@ -73,7 +73,7 @@ class Post(models.Model):
         return (f'текс поста: {self.text[:15]}, '
                 f'автор - {self.author.username}, '
                 f'группа поста - {self.group}, '
-                f'опубликован -  {self.pub_date}')
+                f'опубликован -  {self.pub_date.date()}')
 
     def total_views(self):
         return self.views.count()

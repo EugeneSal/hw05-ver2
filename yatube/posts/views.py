@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import CommentForm, UserEditForm, PostForm, ProfileEditForm,\
+from .forms import CommentForm, UserEditForm, PostForm, ProfileEditForm, \
     GroupForm
 from .models import Comment, Follow, Group, Post, User, Profile, Ip
 
@@ -85,7 +85,18 @@ def post_view(request, username, post_id):
         profile_data = None
     ip = get_client_ip(request)
     if Ip.objects.filter(ip=ip).exists():
+        # print(dir(Ip.objects.filter(ip=ip)))
+        # print(Ip.objects.filter(ip=ip).values())
+        # print(Ip.objects.filter(ip=ip).values()[0])
+        # print(post.views.values()[0]['ip'])
+        # print(post.views)
+        # print(post.views.all())
+        # j = Post.objects.get(id=54)
+        for m in post.views.all():
+            print(m.ip)
+
         post.views.add(Ip.objects.get(ip=ip))
+
     else:
         Ip.objects.create(ip=ip)
         post.views.add(Ip.objects.get(ip=ip))
