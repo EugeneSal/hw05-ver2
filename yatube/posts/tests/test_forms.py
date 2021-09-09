@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-
+from django import forms
 from ..models import Group, Post, User
 
 TEMP_MEDIA = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -52,28 +52,41 @@ class TestsPostForm(TestCase):
         form_post = {'text': 'test text form',
                      'group': self.group.id,
                      'image': uploaded}
-        self.authorized_user.post(reverse('new_post'), data=form_post)
+        self.authorized_user.post(reverse('post_create'), data=form_post)
         response = self.authorized_user.get(reverse('index'))
         self.assertEqual(Post.objects.count(), posts + 1)
         self.assertTrue(Post.objects.filter(text='test text form',
                                             group=self.group,
                                             image='posts/small.gif').exists())
-        self.assertTrue(response.context['page'][0].image.name, uploaded.name)
+        self.assertTrue(response.context['page_obj'][0].image.name,
+                        uploaded.name)
         response = self.authorized_user.get(reverse('index'))
-        self.assertEqual(response.context['page'][0].text, 'test text form')
-        self.assertEqual(response.context['page'][0].author, self.author)
-        self.assertEqual(response.context['page'][0].group, self.group)
+
+        self.assertEqual(response.context['page_obj'][0].text, 'test text form')
+        self.assertEqual(response.context['page_obj'][0].author, self.author)
+        self.assertEqual(response.context['page_obj'][0].group, self.group)
 
     def test_edit_form_post(self):
         """Проверка что при редактировании изменяется соответственный пост......
         """
         form_post = {'text': 'another test text form', 'group': self.group.id}
         self.authorized_user.post(reverse('post_edit', kwargs={
-            'username': self.author.username,
             'post_id': self.post.id}), data=form_post)
-        response = self.authorized_user.get(reverse('post', kwargs={
-            'username': self.author.username, 'post_id': self.post.id}))
-        self.assertEqual(response.context['post'].text,
+        response = self.authorized_user.get(reverse('post_edit', kwargs={
+            'post_id': self.post.id}), data=form_post)
+        form_fields = {
+            'text': forms.fields.CharField,
+            'group': forms.fields.ChoiceField,
+        }
+        for value, expected in form_fields.items():
+            with self.subTest(value=value):
+                form_field = response.context.get('form').fields.get(value)
+                self.assertIsInstance(form_field, expected)
+
+        response1 = self.authorized_user.get(reverse('post_detail', kwargs={
+            'post_id': self.post.id}))
+        self.assertEqual(response1.context['post'].text,
                          'another test text form')
         self.assertTrue(Post.objects.filter(text='another test text form',
-                        id=self.post.id, group=self.group.id).exists())
+                                            id=self.post.id,
+                                            group=self.group.id).exists())

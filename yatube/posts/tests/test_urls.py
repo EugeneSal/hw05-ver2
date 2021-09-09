@@ -21,10 +21,10 @@ class PostsURLTests(TestCase):
         cls.templates_url_names = {
             'posts/index.html': '/',
             'posts/group.html': f'/group/{cls.group.slug}/',
-            'posts/new_post.html': '/new/',
-            'posts/profile.html': f'/{cls.author.username}/',
-            'posts/post.html': f'/{cls.author.username}/{cls.post.id}/',
-            'posts/comments.html': f'/{cls.author.username}/'
+            'posts/create.html': '/create/',
+            'posts/profile.html': f'/profile/{cls.author.username}/',
+            'posts/post_detail.html': f'/posts/{cls.post.id}/',
+            'posts/comments.html': f'/posts/'
                                    f'{cls.post.id}/comment/'}
 
     def setUp(self):
@@ -41,23 +41,22 @@ class PostsURLTests(TestCase):
         и проверка перенаправления"""
         for template, reverse_name in self.templates_url_names.items():
             with self.subTest(reverse_name=reverse_name):
-                if reverse_name == reverse('new_post'):
+                if reverse_name == reverse('post_create'):
                     response = self.anonim_user.get(reverse_name)
                     self.assertEqual(response.status_code, HTTPStatus.FOUND)
-                    self.assertRedirects(response, '/auth/login/?next=/new/')
+                    self.assertRedirects(response, '/auth/login/?next=/create/')
                 elif reverse_name == reverse(
-                        'add_comment', kwargs={'username': self.author.username,
-                                               'post_id': self.post.id}):
+                        'add_comment', kwargs={'post_id': self.post.id}):
                     response = self.anonim_user.get(reverse_name)
                     self.assertEqual(response.status_code, HTTPStatus.FOUND)
                     self.assertRedirects(response,
-                                         f'/auth/login/?next=/'
-                                         f'{self.author.username}/'
+                                         f'/auth/login/?next='
+                                         f'/posts/'
                                          f'{self.post.id}/comment/')
                 else:
                     response = self.anonim_user.get(reverse_name)
                     self.assertEqual(response.status_code, HTTPStatus.OK)
-        response = self.anonim_user.get(f'/{self.author.username}/'
+        response = self.anonim_user.get(f'/posts/'
                                         f'{self.post.id}/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
@@ -69,7 +68,7 @@ class PostsURLTests(TestCase):
                 response = self.authorized_user.get(reverse_name)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
         response = self.authorized_user.get(
-            f'/{self.author.username}/{self.post.id}/edit/')
+            f'/posts/{self.post.id}/edit/')
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_urls_not_author(self):
@@ -79,7 +78,7 @@ class PostsURLTests(TestCase):
             with self.subTest(reverse_name=reverse_name):
                 response = self.not_author_user.get(reverse_name)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
-        response = self.not_author_user.get(f'/{ self.author.username }/'
+        response = self.not_author_user.get(f'/posts/'
                                             f'{ self.post.id }/edit/')
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
 
@@ -92,5 +91,5 @@ class PostsURLTests(TestCase):
                 response = self.authorized_user.get(reverse_name)
                 self.assertTemplateUsed(response, template)
         response = self.authorized_user.get(
-            f'/{self.author.username}/{self.post.id}/edit/')
-        self.assertTemplateUsed(response, 'posts/new_post.html')
+            f'/posts/{self.post.id}/edit/')
+        self.assertTemplateUsed(response, 'posts/create.html')

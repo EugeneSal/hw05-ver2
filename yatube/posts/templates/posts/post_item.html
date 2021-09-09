@@ -2,14 +2,19 @@
 
   <!-- Отображение картинки -->
   {% load thumbnail %}
-  {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
-    <img class="card-img" src="{{ im.url }}">
-  {% endthumbnail %}
+  {% if post.image %}
+    <a class="img-thumbnail" href="{% url 'image' post.image.id %}">
+      {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+        <img class="card-img" src="{{ im.url }}">
+       </a>
+      {% endthumbnail %}
+  {% endif %}
   <!-- Отображение текста поста -->
   <div class="card-body">
     <p class="card-text">
       <!-- Ссылка на автора через @ -->
-      <a name="post_{{ post.id }}" href="{% url 'profile' post.author.username %}">
+      <a name="post_{{ post.id }}"
+         href="{% url 'profile' post.author.username %}">
         <strong class="d-block text-gray-dark">@{{ post.author }}</strong>
       </a>
       {{ post.text|linebreaksbr }}
@@ -24,36 +29,39 @@
 
     <!-- Отображение ссылки на комментарии -->
 
-      <div class="mb-3 d-flex justify-content-between align-items-center">
-        <!--  <a class="mr-3" href="{ url 'like_post' %}"><i class="fa fa-heart text-primary" aria-hidden="true"></i> { post.posts_liked }}</a>
-  -->       {% if post.comments.exists %}
-            Комментариев: {{ post.comments.count }}
-         {% else %}
-            Комментариев пока нет
-         {% endif %}
-            <a class="mr-3"><i class="fa fa-eye text-primary" aria-hidden="true"></i> {{ post.total_views }}</a>
-      </div>
-      <div class="d-flex justify-content-between align-items-center">
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+      <!--  <a class="mr-3" href="{ url 'like_post' %}"><i class="fa fa-heart text-primary" aria-hidden="true"></i> { post.posts_liked }}</a>
+-->       {% if post.comments.exists %}
+      Комментариев: {{ post.comments.count }}
+    {% else %}
+      Комментариев пока нет
+    {% endif %}
+      <a class="mr-3"><i class="fa fa-eye text-primary"
+                         aria-hidden="true"></i> {{ post.total_views }}</a>
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
       <div class="btn-group">
         {% if not form %}
           <div>
-        <a class="btn btn-sm btn-primary ml-2" href="{% url 'post' post.author.username post.id %}" role="button">
-          Просмотр
-        </a>
+            <a class="btn btn-sm btn-primary ml-2"
+               href="{% url 'post_detail' post.id %}" role="button">
+              Просмотр
+            </a>
           </div>
         {% endif %}
         <!-- Ссылка на редактирование поста для автора -->
         {% if user == post.author %}
-                    <div>
+          <div>
 
-          <a class="btn btn-sm btn-info ml-2" href="{% url 'post_edit' post.author.username post.id %}" role="button">
-            Редактировать/
-            удалить
-          </a>
+            <a class="btn btn-sm btn-info ml-2"
+               href="{% url 'post_edit' post.id %}" role="button">
+              Редактировать/
+              удалить
+            </a>
           </div>
         {% endif %}
 
-     </div>
+      </div>
       <!-- Дата публикации поста -->
       <small class="text-muted">{{ post.pub_date|date:"d E Y" }} г.</small>
     </div>

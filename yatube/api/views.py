@@ -7,7 +7,12 @@ from rest_framework.permissions import (
 
 from posts.models import Post, Group, User
 from .permission import IsAuthorOrReadOnly, IsFollowerOrReadOnly
-from .serializers import *
+from .serializers import (
+    CommentSerializer,
+    FollowSerializer,
+    GroupSerializer,
+    PostSerializer,
+    UserSerializer)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):

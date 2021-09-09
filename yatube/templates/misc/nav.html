@@ -4,28 +4,43 @@
 </head>
 <nav class="navbar navbar-light" style="background-color: #e3f2fd;">
   <a class="navbar-brand" href="/"><span style="color:red">Ya</span>tube</a>
-
-  <nav class="my-2 my-md-0 mr-md-3">
+      {% comment %}
+      Меню - список пунктов со стандартными классами Bootsrap.
+      Класс nav-pills нужен для выделения активных пунктов
+      {% endcomment %}
+  <nav class="nav nav-pills">
     {% if user.is_authenticated %}
      <div class="dropdown">
      <button class="btn btn dropdown-toggle" type="button" id="dropdownMenuButton"
-             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ user.username }}</button>
+             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+       <a class="nav-link"></a>{{ user.username }}</button>
        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-         <a class="p-2 text-dark dropdown-item"
-                      href="{% url 'edit' %}">Изменить профиль</a>
-         <a class="p-2 text-dark dropdown-item"
-                      href="{% url 'profile' user.username %}">Просмотр профиля</a>
-        <a class="p-2 text-dark dropdown-item" href="{% url 'password_change' %}">Изменить
-        пароль</a>
+       {% with request.resolver_match.view_name as view_name %}
+
+         <li class="nav-item">
+        <a class="nav-link dropdown-item
+            {% if view_name == 'edit' %}active{% endif %}"
+            href="{% url 'edit' %}">Изменить профиль</a></li>
+         <li class="nav-item">
+         <a class="nav-link dropdown-item {% if view_name == 'profile' %}active{% endif %}"
+                      href="{% url 'profile' user.username %}">Просмотр профиля</a></li>
+         <li class="nav-item">
+
+        <a class="nav-link dropdown-item {% if view_name == 'password_change' %}active{% endif %}"
+           href="{% url 'password_change' %}">Изменить
+        пароль</a></li>
       </div>
 
-      <a class="p-2 text-dark" href="{% url 'new_post' %}">Создать запись</a>
+      <a class="p-2 text-dark" href="{% url 'post_create' %}">Создать запись</a>
 
       <a class="p-2 text-dark" href="{% url 'logout' %}">Выйти</a>
+      {% endwith %}
+
     {% else %}
       <a class="p-2 text-dark" href="{% url 'login' %}">Войти</a> |
       <a class="p-2 text-dark" href="{% url 'signup' %}">Регистрация</a>
     {% endif %}
+
        </div>
   </nav>
 </nav>

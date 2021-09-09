@@ -1,17 +1,25 @@
 from django import forms
 
-from .models import Comment, Post, User, Profile, Group
+from .models import Comment, Post, User, Profile, Group, Image
 
 
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ('text', 'group', 'image')
+        fields = ('text', 'group')
         help_texts = {'text': 'Введите текст записи',
                       'group': 'Выберите группу',
                       'image': 'Загрузите изображение'}
         labels = {'text': 'Текст', 'group': 'Группа', 'image': 'изображение'}
         widgets = {'text': forms.Textarea()}
+
+
+class ImageForm(forms.ModelForm):
+    class Meta:
+        model = Image
+        fields = ('image', )
+        help_texts = {'image': 'Загрузите изображение'}
+        labels = {'image': 'изображение'}
 
 
 class GroupForm(forms.ModelForm):

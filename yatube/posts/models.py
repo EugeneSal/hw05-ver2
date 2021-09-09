@@ -50,6 +50,11 @@ class Group(models.Model):
         return self.title
 
 
+class Image(models.Model):
+    image = models.ImageField(upload_to='image/', blank=True, null=True,
+                              verbose_name='картинка')
+
+
 class Post(models.Model):
     text = models.TextField('')
     pub_date = models.DateTimeField('date published', auto_now_add=True,
@@ -59,8 +64,8 @@ class Post(models.Model):
     group = models.ForeignKey(Group, on_delete=models.SET_NULL,
                               related_name='posts',
                               blank=True, null=True, verbose_name='группа')
-    image = models.ImageField(upload_to='posts/', blank=True, null=True,
-                              verbose_name='картинка')
+    image = models.ForeignKey(Image, blank=True, null=True,
+                              on_delete=models.SET_NULL, related_name='posts')
     views = models.ManyToManyField(Ip, related_name='post_views', blank=True,
                                    verbose_name='просмотры')
 
@@ -86,7 +91,8 @@ class Comment(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                verbose_name='Автор',
                                related_name='comments')
-    text = models.TextField(blank=False, verbose_name='Текст комментария')
+    text = models.TextField('Текст', help_text='Текст нового комментария',
+                            blank=False,)
     created = models.DateTimeField(auto_now_add=True, verbose_name='Дата')
 
     class Meta:

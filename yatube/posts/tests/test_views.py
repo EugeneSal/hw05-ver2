@@ -29,7 +29,8 @@ class PostPagesTests(TestCase):
             'posts/index.html': reverse('index'),
             'posts/group.html': reverse('group', kwargs={
                 'slug': cls.group.slug}),
-            'posts/new_post.html': reverse('new_post')
+            'posts/create.html': reverse('post_create'),
+            'posts/follow.html': reverse('follow_index')
         }
 
     def setUp(self):
@@ -54,8 +55,12 @@ class PostPagesTests(TestCase):
         """
         cache.clear()
         response = self.authorized_user.get(reverse('index'))
-        last_post = response.context['page'][0]
+        last_post = response.context['page_obj'][0]
         self.assertEqual(last_post, self.post)
+
+    def get_context(self, name):
+        self.assertEqual(name.group, PostPagesTests.post.group)
+        self.assertEqual(name.text, PostPagesTests.post.text)
 
     def test_context_in_template_group(self):
         """Шаблон group сформирован с правильным контекстом.....................
@@ -65,31 +70,32 @@ class PostPagesTests(TestCase):
         response = self.authorized_user.get(reverse('group', kwargs={
             'slug': self.group.slug}))
         test_group = response.context['group']
-        test_post = response.context['page'][0]
+        test_post = response.context['page_obj'][0]
         self.assertEqual(test_group, self.group)
         self.assertEqual(test_post, self.post)
+        self.get_context(test_post)
         self.assertEqual(Post.objects.first().text, self.post.text)
         self.assertEqual(Post.objects.first().group, self.post.group)
 
     def test_context_in_template_new_post(self):
         """Шаблон new_posts сформирован с правильным контекстом.................
         """
-        response = self.authorized_user.get(reverse('new_post'))
+        response = self.authorized_user.get(reverse('post_create'))
         form_fields = {'text': forms.fields.CharField,
                        'group': forms.fields.ChoiceField}
         for value, expect in form_fields.items():
             with self.subTest(value=value):
                 form_field = response.context['form'].fields[value]
                 self.assertIsInstance(form_field, expect)
-        response = self.guest_client.get(reverse('new_post'))
-        urls = '/auth/login/?next=/new/'
+        response = self.guest_client.get(reverse('post_create'))
+        urls = '/auth/login/?next=/create/'
         self.assertRedirects(response, urls, status_code=HTTPStatus.FOUND)
 
     def test_context_in_template_post_edit(self):
         """Шаблон post_edit сформирован с правильным контекстом.................
         """
         response = self.authorized_user.get(reverse('post_edit', kwargs={
-            'username': self.user.username, 'post_id': self.post.id}))
+            'post_id': self.post.id}))
         form_fields = {'text': forms.fields.CharField, }
         for value, expect in form_fields.items():
             with self.subTest(value=value):
@@ -107,14 +113,14 @@ class PostPagesTests(TestCase):
                 context = response.context[value]
                 self.assertEqual(context, expect)
 
-        test_page = response.context['page'][0]
+        test_page = response.context['page_obj'][0]
         self.assertEqual(test_page, self.user.posts.all()[0])
 
     def test_context_in_template_post(self):
         """Шаблон post сформирован с правильным контекстом......................
         """
-        response = self.authorized_user.get(reverse('post', kwargs={
-            'username': self.user.username, 'post_id': self.post.id}))
+        response = self.authorized_user.get(reverse('post_detail', kwargs={
+            'post_id': self.post.id}))
         profile = {'author': self.post.author, 'post': self.post}
         for value, expect in profile.items():
             with self.subTest(value=value):
@@ -131,9 +137,9 @@ class PostPagesTests(TestCase):
         group = response.context['group']
         post = group.posts.count()
         self.assertEqual(post, 0)
-        self.assertEqual(len(response.context['page'].object_list), 0)
+        self.assertEqual(len(response.context['page_obj'].object_list), 0)
         response = self.authorized_user.get(reverse('index'))
-        post = response.context['page'][0]
+        post = response.context['page_obj'][0]
         group = post.group
         self.assertEqual(group, self.group)
 
@@ -180,7 +186,7 @@ class PaginatorTest(TestCase):
         for address, reverse_name in self.templates_pages_names.items():
             with self.subTest(adress=address):
                 response = self.authorized_user.get(reverse_name)
-                self.assertEqual(len(response.context.get('page').object_list),
+                self.assertEqual(len(response.context.get('page_obj').object_list),
                                  PAGE_COUNT)
 
     def test_second_page_have_three_posts(self):
@@ -189,8 +195,9 @@ class PaginatorTest(TestCase):
         for address, reverse_name in self.templates_pages_names.items():
             with self.subTest(adress=address):
                 response = self.authorized_user.get(reverse_name + '?page=2')
-                self.assertEqual(len(response.context.get('page').object_list),
-                                 POSTS_COUNT - PAGE_COUNT)
+                self.assertEqual(len(
+                    response.context.get('page_obj').object_list),
+                    POSTS_COUNT - PAGE_COUNT)
 
 
 class TestCache(TestCase):
@@ -217,8 +224,9 @@ class TestCache(TestCase):
         cache.clear()
         response3 = self.authorized_user.get(reverse('index'))
         self.assertNotEqual(response3.content, response1.content)
-        self.assertEqual(response3.context['page'][0].text, 'test cache text')
-        self.assertEqual(len(response3.context['page'].object_list), 2)
+        self.assertEqual(response3.context['page_obj'][0].text,
+                         'test cache text')
+        self.assertEqual(len(response3.context['page_obj'].object_list), 2)
 
 
 class TestFollow(TestCase):
@@ -301,7 +309,7 @@ class TestComments(TestCase):
         cls.comment_user = User.objects.create_user(username='TestCommentUser')
         cls.post = Post.objects.create(text='test text', author=cls.user)
         cls.url_comment = reverse('add_comment', kwargs={
-            'username': cls.post.author.username, 'post_id': cls.post.id})
+            'post_id': cls.post.id})
 
     def setUp(self):
         self.anonymous = Client()

@@ -6,8 +6,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CommentForm, UserEditForm, PostForm, ProfileEditForm, \
-    GroupForm
-from .models import Comment, Follow, Group, Post, User, Profile, Ip
+    GroupForm, ImageForm
+from .models import Comment, Follow, Group, Post, User, Profile, Ip, Image
 
 
 def get_client_ip(request):
@@ -25,7 +25,7 @@ def index(request):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return render(request, 'posts/index.html', {
-        'page': page, 'paginator': paginator})
+        'page_obj': page, 'paginator': paginator})
 
 
 def group_posts(request, slug):
@@ -35,7 +35,7 @@ def group_posts(request, slug):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return render(request, 'posts/group.html', {
-        'group': group, 'page': page, 'paginator': paginator})
+        'group': group, 'page_obj': page, 'paginator': paginator})
 
 
 def group_list(request):
@@ -72,28 +72,27 @@ def profile(request, username):
         Follow.objects.filter(user=request.user, author=author).exists())
     return render(request, 'posts/profile.html', {
         'author': author, 'following': following,
-        'page': page, 'paginator': paginator, 'profile': True,
+        'page_obj': page, 'paginator': paginator, 'profile': True,
         'data': profile_data})
 
 
-def post_view(request, username, post_id):
-    post = get_object_or_404(Post.objects.select_related('author'),
-                             id=post_id, author__username=username)
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
     try:
         profile_data = get_object_or_404(Profile, user=post.author)
     except Exception:
         profile_data = None
     ip = get_client_ip(request)
     if Ip.objects.filter(ip=ip).exists():
-        # print(dir(Ip.objects.filter(ip=ip)))
-        # print(Ip.objects.filter(ip=ip).values())
-        # print(Ip.objects.filter(ip=ip).values()[0])
-        # print(post.views.values()[0]['ip'])
-        # print(post.views)
-        # print(post.views.all())
-        # j = Post.objects.get(id=54)
-        for m in post.views.all():
-            print(m.ip)
+        # # print(dir(Ip.objects.filter(ip=ip)))
+        # # print(Ip.objects.filter(ip=ip).values())
+        # # print(Ip.objects.filter(ip=ip).values()[0])
+        # # print(post.views.values()[0]['ip'])
+        # # print(post.views)
+        # # print(post.views.all())
+        # # j = Post.objects.get(id=54)
+        # for m in post.views.all():
+        #     print(m.ip)
 
         post.views.add(Ip.objects.get(ip=ip))
 
@@ -102,7 +101,7 @@ def post_view(request, username, post_id):
         post.views.add(Ip.objects.get(ip=ip))
     comments = post.comments.all()
     form = CommentForm()
-    return render(request, 'posts/post.html', {
+    return render(request, 'posts/post_detail.html', {
         'author': post.author,
         'post': post,
         'form': form,
@@ -111,35 +110,47 @@ def post_view(request, username, post_id):
 
 
 @login_required
-def new_post(request):
-    form = PostForm(request.POST or None, files=request.FILES or None)
-    if request.method == 'GET' or not form.is_valid():
-        return render(request, 'posts/new_post.html',
-                      {'form': form, 'mode': 'create'})
+def post_create(request):
+    form = PostForm(request.POST or None)
+    form_image = ImageForm(request.POST or None, files=request.FILES or None)
+    if request.method == 'GET' or not (form.is_valid()
+                                       and form_image.is_valid()):
+        return render(request, 'posts/create.html',
+                      {'form': form, 'form_image': form_image,
+                       'mode': 'create'})
     post = form.save(commit=False)
+    form_image.save()
+    image_odj = Image.objects.last()
+    post.image = image_odj
     post.author = request.user
     post.save()
-    return redirect('index')
+    return redirect('profile', post.author)
 
 
 @login_required
-def post_edit(request, username, post_id):
-    post_object = get_object_or_404(Post, id=post_id,
-                                    author__username=username)
+def post_edit(request, post_id):
+    post_object = get_object_or_404(Post, id=post_id)
     if request.user != post_object.author:
-        return redirect('post', username=username, post_id=post_id)
+        return redirect('post_detail', post_id=post_id)
     form = PostForm(request.POST or None, files=request.FILES or None,
                     instance=post_object)
-    if form.is_valid():
+    form_image = ImageForm(request.POST or None, files=request.FILES or None)
+    if form.is_valid() and form_image.is_valid():
         form.save()
-        return redirect('post', username=username, post_id=post_id)
-    return render(request, 'posts/new_post.html', {
-        'form': form, 'mode': 'edit', 'post': post_object})
+        form_image.save()
+        return redirect('post_detail', post_id=post_id)
+    return render(request, 'posts/create.html', {
+        'form': form, 'form_image': form_image,
+        'mode': 'edit', 'post': post_object})
 
 
 def page404(request, exception=None):
     return render(request, 'misc/404.html', {'path': request.path},
                   status=HTTPStatus.NOT_FOUND)
+
+
+def csrf_failure(request, reason=''):
+    return render(request, 'misc/403.html')
 
 
 def page500(request):
@@ -148,8 +159,8 @@ def page500(request):
 
 
 @login_required
-def add_comment(request, username, post_id):
-    post = get_object_or_404(Post, id=post_id, author__username=username)
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
     comments = post.comments.all()
     form = CommentForm(request.POST or None)
     if form.is_valid():
@@ -157,7 +168,7 @@ def add_comment(request, username, post_id):
         comment.author = request.user
         comment.post = post
         comment.save()
-        return redirect('post', username=username, post_id=post_id)
+        return redirect('post_detail', post_id=post_id)
     return render(request, 'posts/comments.html', {
         'form': form,
         'post': post,
@@ -172,7 +183,7 @@ def follow_index(request):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return render(request, 'posts/follow.html', {
-        'page': page, 'paginator': paginator})
+        'page_obj': page, 'paginator': paginator})
 
 
 @login_required
@@ -197,8 +208,7 @@ def comment_delete(request, id):
     comment = get_object_or_404(Comment, id=id)
     if request.user == comment.author or request.user == comment.post.author:
         comment.delete()
-    return redirect('post', username=comment.post.author,
-                    post_id=comment.post.id)
+    return redirect('post_detail', post_id=comment.post.id)
 
 
 @login_required
@@ -225,3 +235,12 @@ def edit(request):
         profile_form = ProfileEditForm(instance=request.user.profile)
     return render(request, 'posts/edit.html', {
         'user_form': user_form, 'profile_form': profile_form})
+
+
+def image(request, id):
+    print(id)
+    # post = get_object_or_404(Post, id=id)
+    image_obj = get_object_or_404(Image, id=id)
+    print(image_obj)
+    return render(request, 'posts/image.html', {
+        'image': image_obj})

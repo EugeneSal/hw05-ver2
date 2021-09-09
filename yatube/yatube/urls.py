@@ -28,6 +28,7 @@ urlpatterns = [
     path('about/', include('about.urls', namespace='about')),
 ]
 
+handler403 = 'posts.views.csrf_failure'
 handler404 = 'posts.views.page404'
 handler500 = 'posts.views.page500'
 

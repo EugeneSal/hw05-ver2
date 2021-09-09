@@ -9,7 +9,7 @@
       </div> <!--"col-md-3 mb-3 mt-1"-->
 
       <div class="col-md-9">
-        {% for post in page %}
+        {% for post in page_obj %}
         {% include "posts/post_item.html" with post=post %}
         {% endfor %}
         <!-- Остальные посты -->
